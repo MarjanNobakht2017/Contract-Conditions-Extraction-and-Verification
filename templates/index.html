@@ -51,41 +51,4 @@
                 $.ajax({
                     url: '/',
                     type: 'POST',
-                    data: formData,
-                    success: function(data) {
-                        var taskId = data.task_id;
-                        checkStatus(taskId);
-                    },
-                    error: function(xhr, status, error) {
-                        $('#status').hide();
-                        $('#conditions').text('Error: ' + xhr.responseText);
-                        $('#result').show();
-                    },
-                    cache: false,
-                    contentType: false,
-                    processData: false
-                });
-            });
-
-            function checkStatus(taskId) {
-                var interval = setInterval(function() {
-                    $.getJSON('/status/' + taskId, function(data) {
-                        if (data.status === 'completed') {
-                            $('#status').hide();
-                            $('#conditions').text(JSON.stringify(data.conditions, null, 2));
-                            $('#analysis_results').text(JSON.stringify(data.analysis_results, null, 2));
-                            $('#result').show();
-                            clearInterval(interval);
-                        } else if (data.status === 'failed') {
-                            $('#status').hide();
-                            $('#conditions').text('Error: ' + data.error);
-                            $('#result').show();
-                            clearInterval(interval);
-                        }
-                    });
-                }, 2000);
-            }
-        });
-    </script>
-</body>
-</html>
+                    data:
