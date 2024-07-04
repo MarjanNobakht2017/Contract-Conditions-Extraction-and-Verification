@@ -46,17 +46,63 @@ def upload_files():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta viewport="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Contract and Tasks</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        #result { display: none; }
+        #status { margin-top: 20px; }
+    </style>
 </head>
 <body>
-    <form action="/" method="post" enctype="multipart/form-data">
+    <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
         <input type="file" name="contract" required>
         <input type="file" name="tasks" required>
         <button type="submit">Upload and Analyze</button>
     </form>
+    <div id="status"></div>
+    <div id="result"></div>
+
+    <script>
+        $(document).ready(function() {
+            $('#uploadForm').submit(function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                $('#status').text('Processing...');
+
+                $.ajax({
+                    url: '/',
+                    type: 'POST',
+                    data: formData,
+                    success: function(data) {
+                        var taskId = data.task_id;
+                        checkStatus(taskId);
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            });
+
+            function checkStatus(taskId) {
+                var interval = setInterval(function() {
+                    $.getJSON('/status/' + taskId, function(data) {
+                        if (data.state === 'SUCCESS') {
+                            $('#status').text('Completed');
+                            $('#result').text(JSON.stringify(data.result, null, 2)).show();
+                            clearInterval(interval);
+                        } else if (data.state === 'FAILURE') {
+                            $('#status').text('Failed: ' + data.status);
+                            clearInterval(interval);
+                        }
+                    });
+                }, 2000);
+            }
+        });
+    </script>
 </body>
 </html>
+
     '''
 
 @app.route('/status/<task_id>')
@@ -78,7 +124,7 @@ def task_status(task_id):
         # something went wrong in the background job
         response = {
             'state': task.state,
-            'status': str(task.info),  # this is the exception raised
+            'status': str(task.info), 
         }
     return jsonify(response)
 
