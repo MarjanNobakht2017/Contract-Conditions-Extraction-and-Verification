@@ -24,8 +24,8 @@ This project provides a system for extracting key terms and conditions from a co
 
 1. **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/your-repository-name.git
-    cd your-repository-name
+    git clone git@github.com:MarjanNobakht2017/Contract-Conditions-Extraction-and-Verification.git
+    cd Contract-Conditions-Extraction-and-Verification
     ```
 
 2. **Install dependencies:**
