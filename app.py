@@ -4,15 +4,17 @@ import pandas as pd
 from docx import Document
 from dotenv import load_dotenv
 from tasks import extract_conditions, analyze_task_description_with_openai
-import logging
+import threading
+import uuid
+import json
 
 # Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# In-memory storage for task results (not suitable for production)
+tasks = {}
 
 def read_docx(file):
     doc = Document(file)
@@ -30,16 +32,33 @@ def read_txt(file):
         except Exception as e:
             raise ValueError(f"Error decoding file: {e}")
 
+def process_task(task_id, contract_text, tasks_df):
+    try:
+        conditions = extract_conditions(contract_text)
+        analysis_results = []
+        for _, row in tasks_df.iterrows():
+            task_description = row['task_description']
+            task_cost = row['amount']
+            analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
+            analysis_results.append({
+                'task_description': task_description,
+                'task_cost': task_cost,
+                'analysis': analysis
+            })
+        tasks[task_id] = {'status': 'completed', 'conditions': conditions, 'analysis_results': analysis_results}
+    except Exception as e:
+        tasks[task_id] = {'status': 'failed', 'error': str(e)}
+
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
     if request.method == 'POST':
+        contract_file = request.files.get('contract')
+        tasks_file = request.files.get('tasks')
+
+        if not contract_file or not tasks_file:
+            return jsonify({'error': 'Missing files'}), 400
+
         try:
-            contract_file = request.files.get('contract')
-            tasks_file = request.files.get('tasks')
-
-            if not contract_file or not tasks_file:
-                return jsonify({'error': 'Missing files'}), 400
-
             if contract_file.filename.lower().endswith('.docx'):
                 contract_text = read_docx(contract_file)
             elif contract_file.filename.lower().endswith('.txt'):
@@ -50,29 +69,25 @@ def upload_files():
             tasks_df = pd.read_excel(tasks_file)
             tasks_df = tasks_df.rename(columns=lambda x: x.strip().lower().replace(' ', '_'))
 
-            logging.info("Extracting conditions...")
-            conditions = extract_conditions(contract_text)
-            logging.info("Conditions extracted.")
+            task_id = str(uuid.uuid4())
+            tasks[task_id] = {'status': 'processing'}
 
-            logging.info("Analyzing tasks...")
-            analysis_results = []
-            for _, row in tasks_df.iterrows():
-                task_description = row['task_description']
-                task_cost = row['amount']
-                analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
-                analysis_results.append({
-                    'task_description': task_description,
-                    'task_cost': task_cost,
-                    'analysis': analysis
-                })
-            logging.info("Tasks analyzed.")
+            # Start the processing in a new thread
+            thread = threading.Thread(target=process_task, args=(task_id, contract_text, tasks_df))
+            thread.start()
 
-            return jsonify({'conditions': conditions, 'analysis_results': analysis_results}), 200
+            return jsonify({'task_id': task_id}), 202
         except Exception as e:
-            logging.error(f"Error processing files: {e}")
             return jsonify({'error': str(e)}), 500
     else:
         return render_template('index.html')
+
+@app.route('/status/<task_id>')
+def task_status(task_id):
+    task = tasks.get(task_id)
+    if not task:
+        return jsonify({'error': 'Invalid task ID'}), 404
+    return jsonify(task)
 
 if __name__ == '__main__':
     app.run(debug=True)
