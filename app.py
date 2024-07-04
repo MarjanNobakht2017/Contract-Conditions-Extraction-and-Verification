@@ -1,96 +1,93 @@
-from flask import Flask, request, jsonify, render_template
-import threading
+from extract_conditions import *
+from analyze_tasks import *
+from flask import Flask, request, jsonify
+import openai
+import json
 import pandas as pd
-import io
-from extract_conditions import extract_conditions, save_conditions_to_file, load_conditions_from_file, read_docx, read_txt
-from analyze_tasks import analyze_all_task_descriptions, clean_column_names
-import uuid
+from docx import Document
+from dotenv import load_dotenv
+import os
+
 
 app = Flask(__name__)
-
-tasks = {}
-
-def process_files_task(task_id, contract_file_data, tasks_file_data):
-    try:
-        contract_file = io.BytesIO(contract_file_data['content'])
-        tasks_file = io.BytesIO(tasks_file_data['content'])
-
-        if contract_file_data['filename'].endswith('.docx'):
-            contract_text = read_docx(contract_file)
-        elif contract_file_data['filename'].endswith('.txt'):
-            contract_text = read_txt(contract_file)
-        else:
-            tasks[task_id] = {'error': 'Unsupported file type'}
-            return
-
-        conditions = extract_conditions(contract_text)
-
-        if conditions:
-            save_conditions_to_file(conditions)
-
-            tasks_df = pd.read_excel(tasks_file)
-            tasks_df = clean_column_names(tasks_df)
-
-            loaded_conditions = load_conditions_from_file()
-
-            violations = analyze_all_task_descriptions(tasks_df, loaded_conditions)
-            tasks[task_id] = {'conditions': loaded_conditions, 'violations': violations}
-        else:
-            tasks[task_id] = {'error': 'Error extracting conditions'}
-
-    except Exception as e:
-        tasks[task_id] = {'error': str(e)}
-
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
     if request.method == 'POST':
         contract_file = request.files['contract']
         tasks_file = request.files['tasks']
 
-        contract_file_data = {
-            'filename': contract_file.filename.lower(),
-            'content': contract_file.read()
-        }
+        filename = contract_file.filename.lower()
 
-        tasks_file_data = {
-            'filename': tasks_file.filename.lower(),
-            'content': tasks_file.read()
-        }
+        try:
+            if filename.endswith('.docx'):
+                contract_text = read_docx(contract_file)
+            elif filename.endswith('.txt'):
+                contract_text = read_txt(contract_file)
+            else:
+                return 'Unsupported file type', 400
+        except Exception as e:
+            return f'Error reading file: {e}', 400
 
-        task_id = str(uuid.uuid4())
-        tasks[task_id] = {'state': 'PENDING'}
+        conditions = extract_conditions(contract_text)
 
-        thread = threading.Thread(target=process_files_task, args=(task_id, contract_file_data, tasks_file_data))
-        thread.start()
+        if conditions:
+            # save conditions to a JSON file
+            save_conditions_to_file(conditions)
 
-        return jsonify({"task_id": task_id}), 202
+            # read the tasks file
+            try:
+                tasks_df = pd.read_excel(tasks_file)
+                tasks_df = clean_column_names(tasks_df)
+                print("Cleaned columns in tasks file:", tasks_df.columns)
 
-    return render_template('upload.html')
+                # load the conditions from the file
+                loaded_conditions = load_conditions_from_file()
 
-@app.route('/task_status/<task_id>', methods=['GET'])
-def task_status(task_id):
-    task = tasks.get(task_id, None)
-    if task is None:
-        response = {
-            'state': 'NOT_FOUND',
-            'status': 'Task not found'
+                violations = analyze_all_task_descriptions(tasks_df, loaded_conditions)
+                return jsonify({'conditions': loaded_conditions, 'violations': violations})
+            except Exception as e:
+                return f'Error reading tasks file: {e}', 400
+        else:
+            return 'Error extracting conditions', 400
+    return '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Contract and Tasks</title>
+    <!-- Link to Bootstrap CSS for styling -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 50px;
         }
-    elif 'error' in task:
-        response = {
-            'state': 'FAILURE',
-            'result': task
-        }
-    elif 'conditions' in task and 'violations' in task:
-        response = {
-            'state': 'SUCCESS',
-            'result': task
-        }
-    else:
-        response = {
-            'state': 'PENDING',
-            'status': 'Pending...'
-        }
-    return jsonify(response)
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-5">Upload Contract and Tasks</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="contractFile">Upload Contract:</label>
+                <input type="file" class="form-control-file" id="contractFile" name="contract">
+            </div>
+            <div class="form-group">
+                <label for="tasksFile">Upload Task Descriptions:</label>
+                <input type="file" class="form-control-file" id="tasksFile" name="tasks">
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze Tasks</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+    '''
+
 
 if __name__ == '__main__':
     app.run(debug=True)

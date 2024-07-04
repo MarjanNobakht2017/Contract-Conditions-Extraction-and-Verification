@@ -17,10 +17,7 @@ openai.api_key = api_key
 openai.api_base = azure_endpoint
 openai.api_type = "azure"
 openai.api_version = api_version
-def clean_column_names(df):
-    # cleans and standardizes column names by stripping whitespace and converting to lowercase
-    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
-    return df
+
 
 def validate_and_clean_json(response_content):
     try:
