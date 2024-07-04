@@ -4,6 +4,8 @@ from docx import Document
 from dotenv import load_dotenv
 import os
 from celery import Celery
+from tasks import *
+
 
 # Load configuration from .env file
 load_dotenv()
@@ -18,7 +20,7 @@ app.config['CELERY_RESULT_BACKEND'] = os.environ.get('REDIS_URL', 'redis://local
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
-from tasks import analyze_task_description_with_openai, extract_conditions, save_conditions_to_file, load_conditions_from_file, clean_column_names, read_docx, read_txt
+@app.route('/', methods=['GET', 'POST'])
 
 def upload_files():
     if request.method == 'POST':
