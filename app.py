@@ -5,16 +5,20 @@ import pandas as pd
 from docx import Document
 from extract_conditions import *
 from analyze_tasks import *
+import io
 
 app = Flask(__name__)
 
 @celery_app.task(bind=True)
 def process_files(self, contract_file_data, tasks_file_data):
     try:
+        contract_file = io.BytesIO(contract_file_data['content'])
+        tasks_file = io.BytesIO(tasks_file_data['content'])
+        
         if contract_file_data['filename'].endswith('.docx'):
-            contract_text = read_docx(contract_file_data['content'])
+            contract_text = read_docx(contract_file)
         elif contract_file_data['filename'].endswith('.txt'):
-            contract_text = read_txt(contract_file_data['content'])
+            contract_text = read_txt(contract_file)
         else:
             return {'error': 'Unsupported file type'}
 
@@ -23,7 +27,7 @@ def process_files(self, contract_file_data, tasks_file_data):
         if conditions:
             save_conditions_to_file(conditions)
 
-            tasks_df = pd.read_excel(tasks_file_data['content'])
+            tasks_df = pd.read_excel(tasks_file)
             tasks_df = clean_column_names(tasks_df)
 
             loaded_conditions = load_conditions_from_file()
