@@ -1,15 +1,25 @@
-from extract_conditions import *
-from analyze_tasks import *
 from flask import Flask, request, jsonify
-import openai
-import json
 import pandas as pd
 from docx import Document
 from dotenv import load_dotenv
 import os
+from celery import Celery
 
+# Load configuration from .env file
+load_dotenv()
 
 app = Flask(__name__)
+
+# Celery configuration
+app.config['CELERY_BROKER_URL'] = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+app.config['CELERY_RESULT_BACKEND'] = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+# Initialize Celery
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
+
+from tasks import analyze_task_description_with_openai, extract_conditions, save_conditions_to_file, load_conditions_from_file, clean_column_names, read_docx, read_txt
+
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
     if request.method == 'POST':
@@ -28,66 +38,49 @@ def upload_files():
         except Exception as e:
             return f'Error reading file: {e}', 400
 
-        conditions = extract_conditions(contract_text)
-
-        if conditions:
-            # save conditions to a JSON file
-            save_conditions_to_file(conditions)
-
-            # read the tasks file
-            try:
-                tasks_df = pd.read_excel(tasks_file)
-                tasks_df = clean_column_names(tasks_df)
-                print("Cleaned columns in tasks file:", tasks_df.columns)
-
-                # load the conditions from the file
-                loaded_conditions = load_conditions_from_file()
-
-                violations = analyze_all_task_descriptions(tasks_df, loaded_conditions)
-                return jsonify({'conditions': loaded_conditions, 'violations': violations})
-            except Exception as e:
-                return f'Error reading tasks file: {e}', 400
-        else:
-            return 'Error extracting conditions', 400
+        # Process conditions extraction asynchronously
+        task = extract_conditions.delay(contract_text)
+        return jsonify({'task_id': task.id}), 202
     return '''
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta viewport="width=device-width, initial-scale=1.0">
     <title>Upload Contract and Tasks</title>
-    <!-- Link to Bootstrap CSS for styling -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .container {
-            margin-top: 50px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="mb-5">Upload Contract and Tasks</h1>
-        <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="contractFile">Upload Contract:</label>
-                <input type="file" class="form-control-file" id="contractFile" name="contract">
-            </div>
-            <div class="form-group">
-                <label for="tasksFile">Upload Task Descriptions:</label>
-                <input type="file" class="form-control-file" id="tasksFile" name="tasks">
-            </div>
-            <button type="submit" class="btn btn-primary">Analyze Tasks</button>
-        </form>
-    </div>
-
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="contract" required>
+        <input type="file" name="tasks" required>
+        <button type="submit">Upload and Analyze</button>
+    </form>
 </body>
 </html>
     '''
 
+@app.route('/status/<task_id>')
+def task_status(task_id):
+    task = celery.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'status': task.info.get('status', '')
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True)
