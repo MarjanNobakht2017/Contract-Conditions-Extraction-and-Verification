@@ -8,12 +8,11 @@ import threading
 import uuid
 import json
 
-# Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
 
-# In-memory storage for task results (not suitable for production)
+# in-memory storage for task results
 tasks = {}
 
 def read_docx(file):

@@ -6,10 +6,8 @@ from rq import Worker, Queue, Connection
 from dotenv import load_dotenv
 import openai
 
-# Load .env configuration
 load_dotenv()
 
-# Configure OpenAI
 api_key = os.getenv("OPENAI_API_KEY")
 azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 api_version = os.getenv("AZURE_OPENAI_API_VERSION")

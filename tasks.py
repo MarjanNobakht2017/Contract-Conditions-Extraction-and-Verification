@@ -5,7 +5,6 @@ from docx import Document
 from dotenv import load_dotenv
 import os
 
-# Load configuration from .env file
 load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
@@ -13,7 +12,7 @@ azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 deployment_id = os.getenv("AZURE_OPENAI_DEPLOYMENT_ID")
 
-# Configure OpenAI
+# configure OpenAI
 openai.api_key = api_key
 openai.api_base = azure_endpoint
 openai.api_type = "azure"

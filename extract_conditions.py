@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 import re
 
-# Load configuration from .env file
+# load configuration from .env file
 load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
@@ -47,7 +47,6 @@ def read_txt(file):
 
 
 def validate_and_clean_json(response_content):
-    # validate and clean JSON content from the OpenAI API response
     try:
         return json.loads(response_content)
     except json.JSONDecodeError:
@@ -107,7 +106,6 @@ def extract_conditions(contract_text):
 
         print("Extracted conditions:", conditions)
 
-        # Validate and clean JSON structure
         conditions_json = validate_and_clean_json(conditions)
         if conditions_json is None:
             raise json.JSONDecodeError("Failed to decode JSON after cleanup.", conditions, 0)

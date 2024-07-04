@@ -12,7 +12,6 @@ azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 deployment_id = os.getenv("AZURE_OPENAI_DEPLOYMENT_ID")
 
-# Configure OpenAI
 openai.api_key = api_key
 openai.api_base = azure_endpoint
 openai.api_type = "azure"
@@ -23,7 +22,6 @@ def validate_and_clean_json(response_content):
     try:
         return json.loads(response_content)
     except json.JSONDecodeError:
-        # fix common JSON formatting issues
         cleaned_content = response_content.strip().strip('`').replace("'", '"')
         cleaned_content = re.sub(r'([{,]\s*)(\w+)(\s*:)', r'\1"\2"\3', cleaned_content)
         try:

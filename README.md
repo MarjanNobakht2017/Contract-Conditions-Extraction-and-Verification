@@ -41,7 +41,10 @@ This project provides a system for extracting key terms and conditions from a co
 ## Usage
 
 1. **Access the Interface:**
-   - Open your web browser and navigate to `http://localhost:5000`.
+   - Open your web browser and navigate to `https://pristine-badlands-91837-8a3526ef12a6.herokuapp.com`.
+   - Note: Due to limitations of Heroku and the time taken by OpenAI's API to process requests, completing the task might take some time. Please be patient while the system processes the contract and tasks.
+
+
 
 2. **Upload Contract:**
    - Upload the contract text file containing the terms and conditions.
