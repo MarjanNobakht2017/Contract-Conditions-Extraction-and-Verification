@@ -19,15 +19,15 @@
         <form id="uploadForm" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="contractFile">Upload Contract:</label>
-                <input type="file" class="form-control-file" id="contractFile" name="contract">
+                <input type="file" class="form-control-file" id="contractFile" name="contract" required>
             </div>
             <div class="form-group">
                 <label for="tasksFile">Upload Task Descriptions:</label>
-                <input type="file" class="form-control-file" id="tasksFile" name="tasks">
+                <input type="file" class="form-control-file" id="tasksFile" name="tasks" required>
             </div>
             <button type="submit" class="btn btn-primary">Analyze Tasks</button>
         </form>
-        <div id="status"></div>
+        <div id="status">Processing...</div>
         <div id="result"></div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -35,28 +35,32 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         $(document).ready(function() {
+            $('#status').hide();
+
             $('#uploadForm').submit(function(e) {
                 e.preventDefault();
                 var formData = new FormData(this);
-                $('#status').text('Processing...');
+                $('#status').show();
+                $('#result').hide();
 
                 $.ajax({
                     url: '/',
                     type: 'POST',
                     data: formData,
                     success: function(data) {
-                        var taskId = data.task_id;
-                        checkStatus(taskId);
+                        $('#status').hide();
+                        $('#result').text(JSON.stringify(data.conditions, null, 2)).show();
+                    },
+                    error: function(xhr, status, error) {
+                        $('#status').hide();
+                        $('#result').text('Error: ' + xhr.responseText).show();
                     },
                     cache: false,
                     contentType: false,
                     processData: false
                 });
             });
-
-            function checkStatus(taskId) {
-                var interval = setInterval(function() {
-                    $.getJSON('/status/' + taskId, function(data) {
-                        if (data.state === 'SUCCESS') {
-                            $('#status').text('Completed');
-                            $('#result').text(JSON.stringify(data.result, null, 2)).show();
+        });
+    </script>
+</body>
+</html>

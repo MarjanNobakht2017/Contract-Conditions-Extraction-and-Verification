@@ -1,19 +1,35 @@
 from flask import Flask, request, jsonify, render_template
 import os
-from celery import Celery
+import pandas as pd
+from docx import Document
 from dotenv import load_dotenv
-from tasks import extract_conditions, read_docx, read_txt
+import time
 
 # Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
 
-# Configure Celery
-app.config['CELERY_BROKER_URL'] = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-app.config['CELERY_RESULT_BACKEND'] = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
+def read_docx(file):
+    doc = Document(file)
+    full_text = []
+    for para in doc.paragraphs:
+        full_text.append(para.text)
+    return '\n'.join(full_text)
+
+def read_txt(file):
+    try:
+        return file.read().decode('utf-8')
+    except UnicodeDecodeError:
+        try:
+            return file.read().decode('latin-1')
+        except Exception as e:
+            raise ValueError(f"Error decoding file: {e}")
+
+def extract_conditions(contract_text):
+    # Simulate long-running task
+    time.sleep(10)  # Simulate a delay
+    return {"conditions": "Extracted conditions from the contract."}
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
@@ -32,23 +48,12 @@ def upload_files():
             else:
                 return jsonify({'error': 'Unsupported file type'}), 400
 
-            task = extract_conditions.delay(contract_text)
-            return jsonify({'task_id': task.id}), 202
+            conditions = extract_conditions(contract_text)
+            return jsonify({'conditions': conditions}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:
         return render_template('index.html')
-
-@app.route('/status/<task_id>')
-def task_status(task_id):
-    task = celery.AsyncResult(task_id)
-    if task.state == 'PENDING':
-        response = {'state': task.state, 'status': 'Pending...'}
-    elif task.state == 'SUCCESS':
-        response = {'state': task.state, 'result': task.result}
-    elif task.state == 'FAILURE':
-        response = {'state': task.state, 'status': 'Failed', 'error': str(task.info)}
-    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True)
