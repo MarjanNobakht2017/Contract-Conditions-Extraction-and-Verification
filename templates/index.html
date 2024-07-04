@@ -28,7 +28,10 @@
             <button type="submit" class="btn btn-primary">Analyze Tasks</button>
         </form>
         <div id="status">Processing...</div>
-        <div id="result"></div>
+        <div id="result" class="mt-5">
+            <h2>Extracted Conditions</h2>
+            <pre id="conditions"></pre>
+        </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
@@ -49,11 +52,13 @@
                     data: formData,
                     success: function(data) {
                         $('#status').hide();
-                        $('#result').text(JSON.stringify(data.conditions, null, 2)).show();
+                        $('#conditions').text(JSON.stringify(data.conditions, null, 2));
+                        $('#result').show();
                     },
                     error: function(xhr, status, error) {
                         $('#status').hide();
-                        $('#result').text('Error: ' + xhr.responseText).show();
+                        $('#conditions').text('Error: ' + xhr.responseText);
+                        $('#result').show();
                     },
                     cache: false,
                     contentType: false,
