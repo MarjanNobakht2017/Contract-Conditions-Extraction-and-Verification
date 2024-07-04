@@ -4,16 +4,19 @@ import pandas as pd
 from docx import Document
 from dotenv import load_dotenv
 import uuid
-import threading
-import time
+from redis import Redis
+from rq import Queue, Connection
+from rq.job import Job
+from tasks import extract_conditions, analyze_task_description_with_openai
 
 # Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
 
-# In-memory store for task statuses
-tasks = {}
+# Initialize Redis connection
+redis_conn = Redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
+q = Queue(connection=redis_conn)
 
 def read_docx(file):
     doc = Document(file)
@@ -31,44 +34,21 @@ def read_txt(file):
         except Exception as e:
             raise ValueError(f"Error decoding file: {e}")
 
-def extract_conditions(contract_text):
-    # Simulate long-running task
-    time.sleep(10)  # Simulate a delay
+def process_task(contract_text, tasks_df):
+    conditions = extract_conditions(contract_text)
 
-    # Simulated OpenAI API call
-    conditions = {
-        "extracted_conditions": "This is a simulated response from OpenAI."
-    }
-    return conditions
+    analysis_results = []
+    for _, row in tasks_df.iterrows():
+        task_description = row['task_description']
+        task_cost = row['amount']
+        analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
+        analysis_results.append({
+            'task_description': task_description,
+            'task_cost': task_cost,
+            'analysis': analysis
+        })
 
-def analyze_task_description_with_openai(task_description, task_cost, conditions):
-    # Simulate long-running task
-    time.sleep(10)  # Simulate a delay
-
-    # Simulated OpenAI API call
-    analysis = {
-        "analysis": "This is a simulated analysis result from OpenAI."
-    }
-    return analysis
-
-def process_task(task_id, contract_text, tasks_df):
-    try:
-        conditions = extract_conditions(contract_text)
-
-        analysis_results = []
-        for _, row in tasks_df.iterrows():
-            task_description = row['task_description']
-            task_cost = row['amount']
-            analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
-            analysis_results.append({
-                'task_description': task_description,
-                'task_cost': task_cost,
-                'analysis': analysis
-            })
-
-        tasks[task_id] = {'status': 'completed', 'conditions': conditions, 'analysis_results': analysis_results}
-    except Exception as e:
-        tasks[task_id] = {'status': 'failed', 'error': str(e)}
+    return {'conditions': conditions, 'analysis_results': analysis_results}
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
@@ -90,13 +70,10 @@ def upload_files():
             tasks_df = pd.read_excel(tasks_file)
             tasks_df = tasks_df.rename(columns=lambda x: x.strip().lower().replace(' ', '_'))
 
-            task_id = str(uuid.uuid4())
-            tasks[task_id] = {'status': 'processing'}
+            # Enqueue task
+            job = q.enqueue(process_task, contract_text, tasks_df)
 
-            thread = threading.Thread(target=process_task, args=(task_id, contract_text, tasks_df))
-            thread.start()
-
-            return jsonify({'task_id': task_id}), 202
+            return jsonify({'task_id': job.get_id()}), 202
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:
@@ -104,10 +81,13 @@ def upload_files():
 
 @app.route('/status/<task_id>')
 def task_status(task_id):
-    task = tasks.get(task_id)
-    if not task:
-        return jsonify({'error': 'Invalid task ID'}), 404
-    return jsonify(task)
+    job = Job.fetch(task_id, connection=redis_conn)
+    if job.is_finished:
+        return jsonify(job.result)
+    elif job.is_failed:
+        return jsonify({'status': 'failed', 'error': str(job.exc_info)}), 500
+    else:
+        return jsonify({'status': 'in progress'}), 202
 
 if __name__ == '__main__':
     app.run(debug=True)

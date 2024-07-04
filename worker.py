@@ -1,23 +1,27 @@
-import openai
+import os
 import json
 import re
-from docx import Document
+from redis import Redis
+from rq import Worker, Queue, Connection
 from dotenv import load_dotenv
-import os
+import openai
 
-# Load configuration from .env file
+# Load .env configuration
 load_dotenv()
 
+# Configure OpenAI
 api_key = os.getenv("OPENAI_API_KEY")
 azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 deployment_id = os.getenv("AZURE_OPENAI_DEPLOYMENT_ID")
 
-# Configure OpenAI
 openai.api_key = api_key
 openai.api_base = azure_endpoint
 openai.api_type = "azure"
 openai.api_version = api_version
+
+redis_conn = Redis.from_url(os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
+listen = ['default']
 
 def validate_and_clean_json(response_content):
     try:
@@ -101,3 +105,8 @@ def analyze_task_description_with_openai(task_description, task_cost, conditions
         return analysis_json if analysis_json else {"error": "Failed to decode JSON after cleanup."}
     except Exception as e:
         return {"error": "API call failed", "details": str(e)}
+
+if __name__ == '__main__':
+    with Connection(redis_conn):
+        worker = Worker(list(map(Queue, listen)))
+        worker.work()
