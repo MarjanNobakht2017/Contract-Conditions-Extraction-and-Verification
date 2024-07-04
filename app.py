@@ -5,8 +5,6 @@ from docx import Document
 from dotenv import load_dotenv
 import uuid
 from redis import Redis
-from rq import Queue, Connection
-from rq.job import Job
 from tasks import extract_conditions, analyze_task_description_with_openai
 
 # Load .env configuration
