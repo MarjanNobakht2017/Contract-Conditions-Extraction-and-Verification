@@ -1,14 +1,16 @@
 from flask import Flask, request, jsonify, render_template
-from celery_config import celery_app
+import threading
 import pandas as pd
 import io
 from extract_conditions import extract_conditions, save_conditions_to_file, load_conditions_from_file, read_docx, read_txt
 from analyze_tasks import analyze_all_task_descriptions, clean_column_names
+import uuid
 
 app = Flask(__name__)
 
-@celery_app.task(bind=True)
-def process_files(self, contract_file_data, tasks_file_data):
+tasks = {}
+
+def process_files_task(task_id, contract_file_data, tasks_file_data):
     try:
         contract_file = io.BytesIO(contract_file_data['content'])
         tasks_file = io.BytesIO(tasks_file_data['content'])
@@ -18,7 +20,8 @@ def process_files(self, contract_file_data, tasks_file_data):
         elif contract_file_data['filename'].endswith('.txt'):
             contract_text = read_txt(contract_file)
         else:
-            return {'error': 'Unsupported file type'}
+            tasks[task_id] = {'error': 'Unsupported file type'}
+            return
 
         conditions = extract_conditions(contract_text)
 
@@ -31,12 +34,12 @@ def process_files(self, contract_file_data, tasks_file_data):
             loaded_conditions = load_conditions_from_file()
 
             violations = analyze_all_task_descriptions(tasks_df, loaded_conditions)
-            return {'conditions': loaded_conditions, 'violations': violations}
+            tasks[task_id] = {'conditions': loaded_conditions, 'violations': violations}
         else:
-            return {'error': 'Error extracting conditions'}
+            tasks[task_id] = {'error': 'Error extracting conditions'}
 
     except Exception as e:
-        return {'error': str(e)}
+        tasks[task_id] = {'error': str(e)}
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
@@ -54,28 +57,38 @@ def upload_files():
             'content': tasks_file.read()
         }
 
-        task = process_files.delay(contract_file_data, tasks_file_data)
-        return jsonify({"task_id": task.id}), 202
+        task_id = str(uuid.uuid4())
+        tasks[task_id] = {'state': 'PENDING'}
+
+        thread = threading.Thread(target=process_files_task, args=(task_id, contract_file_data, tasks_file_data))
+        thread.start()
+
+        return jsonify({"task_id": task_id}), 202
 
     return render_template('upload.html')
 
 @app.route('/task_status/<task_id>', methods=['GET'])
 def task_status(task_id):
-    task = process_files.AsyncResult(task_id)
-    if task.state == 'PENDING':
+    task = tasks.get(task_id, None)
+    if task is None:
         response = {
-            'state': task.state,
-            'status': 'Pending...'
+            'state': 'NOT_FOUND',
+            'status': 'Task not found'
         }
-    elif task.state != 'FAILURE':
+    elif 'error' in task:
         response = {
-            'state': task.state,
-            'result': task.result
+            'state': 'FAILURE',
+            'result': task
+        }
+    elif 'conditions' in task and 'violations' in task:
+        response = {
+            'state': 'SUCCESS',
+            'result': task
         }
     else:
         response = {
-            'state': task.state,
-            'status': str(task.info),
+            'state': 'PENDING',
+            'status': 'Pending...'
         }
     return jsonify(response)
 
