@@ -1,0 +1,331 @@
+{
+"violations": [
+    {
+      "analysis": {
+        "cost_estimate": "$2,400",
+        "task_description": "Client workshop in Silicon Valley",
+        "violations": []
+      },
+      "cost": "$2,400",
+      "task": "Client workshop in Silicon Valley"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$2,700",
+        "task_description": "Sales training in Dubai during peak tourist season",
+        "violations": [
+          {
+            "condition": "Travel expenses during peak tourist seasons",
+            "violation": "The cost estimate exceeds the TotalExpensesPerTrip budget cap of $2,500. However, the contract allows for a budget increase of up to 10% during peak tourist seasons. The new limit should thus be $2750. Therefore, the cost is not in violation."
+          },
+          {
+            "condition": "PreApprovalRequirement",
+            "violation": "Information about task pre-approval is not provided."
+          },
+          {
+            "condition": "Detailed Reports",
+            "violation": "Information necessary for detailed reports is not provided in task description."
+          }
+        ]
+      },
+      "cost": "$2,700",
+      "task": "Sales training in Dubai during peak tourist season"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$3,500",
+        "task_description": "Research trip to remote part of Norway (booked last-minute)",
+        "violations": [
+          {
+            "condition": "Total expenses per trip budget cap ($2,500)",
+            "violation": "The cost estimate of $3,500 exceeds the specified budget cap for total expenses per trip."
+          },
+          {
+            "condition": "Pre-approval requirement for travel",
+            "violation": "The trip was booked last-minute, which may imply that it wasn't pre-approved by the Client as per the pre-approval requirement."
+          }
+        ]
+      },
+      "cost": "$3,500",
+      "task": "Research trip to remote part of Norway (booked last-minute)"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$3,000",
+        "task_description": "Conference in New York with weekend travel",
+        "violations": [
+          {
+            "condition": "BudgetCaps.TotalExpensesPerTrip",
+            "violation": "The given cost estimate of $3,000 exceeds the contract's specified total expenses per trip cap of $2,500."
+          },
+          {
+            "condition": "AmendmentToTheServiceAgreementRegardingTravelExpenses.AmendmentsToTravelExpensePolicy.MultiFactorAdjustmentConditions",
+            "violation": "Given it's a weekend travel, the cost estimate should not be a flat amount but factored with Night and Weekend Travel multiplier of 1.1, potentially implying incorrect cost calculation."
+          }
+        ]
+      },
+      "cost": "$3,000",
+      "task": "Conference in New York with weekend travel"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$2,200",
+      "task": "Team building event in Colorado"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$9,500",
+      "task": "Marketing tour across Asia (planned and pre-approved)"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$2,400",
+        "task_description": "Strategy retreat in the Swiss Alps during winter",
+        "violations": [
+          {
+            "condition": "PreApprovalRequirement",
+            "violation": "The task description does not mention if the strategy retreat was pre-approved by the client."
+          },
+          {
+            "condition": "TotalExpensesPerTrip",
+            "violation": "The cost estimate is within the total budget cap per trip of $2,500, so it's not a violation."
+          },
+          {
+            "condition": "LocationAndSeasonalAdjustments",
+            "violation": "The retreat is scheduled during winter in the Swiss Alps which may be a peak tourist season. The budget may need to be increased by up to 10% and it should be taken into account in the cost estimate and planning."
+          },
+          {
+            "condition": "AccommodationStandards",
+            "violation": "The task description does not specify if the accommodation during the retreat will be in approved hotels."
+          },
+          {
+            "condition": "AmendmentToTheServiceAgreementRegardingTravelExpenses",
+            "violation": "The task description does not consider the multi-factor adjustment conditions for travel expenses. In this case, it could be considered seasonal and location-based adjustments factor."
+          }
+        ]
+      },
+      "cost": "$2,400",
+      "task": "Strategy retreat in the Swiss Alps during winter"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$3,000",
+      "task": "Field research in Amazon rainforest (urgent and rainy season)"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$3,500",
+        "task_description": "Trade show participation in Florida during hurricane season",
+        "violations": [
+          {
+            "condition": "BudgetCaps TotalExpensesPerTrip",
+            "violation": "The estimated cost of the task exceeds the set budget cap of $2,500 per trip."
+          },
+          {
+            "condition": "SpecialCircumstancesProvisions SevereWeatherOrChallengingEnvironments",
+            "violation": "Considering the task is during the hurricane season in Florida, severe weather conditions are expected. However, the cost estimate did not include the $300 per trip allowance for such circumstances."
+          },
+          {
+            "condition": "AmendmentToTheServiceAgreementRegardingTravelExpenses MultiFactorAdjustmentConditions Seasonal and Location-Based Adjustments",
+            "violation": "Given the specified seasonal and location-based adjustment multiplier of 1.2 applied to the Base Budget of $2,500 should result in an Adjusted allowable Expense of $3,000, not including additional allowances for severe weather conditions."
+          }
+        ]
+      },
+      "cost": "$3,500",
+      "task": "Trade show participation in Florida during hurricane season"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$3,500",
+      "task": "Executive meeting in London during a bank holiday weekend"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$2,550",
+      "task": "Development workshop in Tokyo during Golden Week"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$2,800",
+        "task_description": "Client visit to manufacturing site in Germany",
+        "violations": [
+          {
+            "condition": "Total Expenses Per Trip",
+            "violation": "The cost estimate for this trip exceeds the agreed upon 'Total Expenses Per Trip' budget cap of $2,500. The specific amount exceeds by $300."
+          }
+        ]
+      },
+      "cost": "$2,800",
+      "task": "Client visit to manufacturing site in Germany"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$7,500",
+        "task_description": "Product launch prep in California, planned one month in advance",
+        "violations": [
+          {
+            "condition": "GeneralTravelProvisions - BudgetCaps - TotalExpensesPerTrip",
+            "violation": "The estimated cost of $7,500 exceeds the total allowable expenses per trip of $2,500. Even with high cost locations and seasonal adjustments, the cost exceeds the budget cap."
+          }
+        ]
+      },
+      "cost": "$7,500",
+      "task": "Product launch prep in California, planned one month in advance"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$2,300",
+      "task": "Annual review meeting in Singapore"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$10,500",
+        "task_description": "Investor roadshow in multiple US cities (urgent and pre-approved)",
+        "violations": [
+          {
+            "condition": "TotalExpensesPerTrip",
+            "violation": "The cost for the trip is estimated to be $10,500 which is significantly more than permitted per trip. The limit is $2,500."
+          },
+          {
+            "condition": "MultiFactorAdjustmentConditions",
+            "violation": "Even with an urgent business factor applied, which multiplies the base budget by 1.3, the maximum allowable expense would be $3,250. The proposed budget is over 3 times that amount."
+          }
+        ]
+      },
+      "cost": "$10,500",
+      "task": "Investor roadshow in multiple US cities (urgent and pre-approved)"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$3,800",
+      "task": "Site survey for new plant in Iceland during winter"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$6,000",
+        "task_description": "Negotiation meeting in high-risk area in Middle East (urgent)",
+        "violations": [
+          {
+            "condition": "BudgetCaps - TotalExpensesPerTrip",
+            "violation": "The cost estimate exceeds the total expenses per trip specified in the contract ($2,500). Even considering location based adjustments and special circumstances provisions for high-risk areas, the cost seems significantly higher than allowed."
+          },
+          {
+            "condition": "AmendmentsToTravelExpensePolicy - MultiFactorAdjustmentConditions",
+            "violation": "Even if we apply the highest multiplier for 'Urgency and Unscheduled Travel Surge Pricing' (1.3) to the base budget ($2,500), the adjusted allowable expense would be $3250, still less than the estimated cost."
+          }
+        ]
+      },
+      "cost": "$6,000",
+      "task": "Negotiation meeting in high-risk area in Middle East (urgent)"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$3,000",
+      "task": "Workshop in Las Vegas during a major conference"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$3,200",
+      "task": "Client meeting in Paris during Fashion Week"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$5,000",
+        "task_description": "Engineering team offsite in remote Alaska in January",
+        "violations": [
+          {
+            "condition": "BudgetCaps - TotalExpensesPerTrip",
+            "violation": "The task description implies a travel-related task, with estimated cost as $5,000. This cost exceeds the budget cap of $2,500 stated per trip as required by the contract conditions under 'GeneralTravelProvisions' section."
+          },
+          {
+            "condition": "GeneralTravelProvisions - PreApprovalRequirement",
+            "violation": "The task description doesn't provide information whether this trip has been pre-approved by the Client as required by the 'GeneralTravelProvisions' section. If it hasn't, it stands as a violation."
+          },
+          {
+            "condition": "AmendmentToTheServiceAgreementRegardingTravelExpenses - MultiFactorAdjustmentConditions",
+            "violation": "Given the location (remote Alaska) and the time of the trip (January), there may be need for adjustments to the base budget due to 'Seasonal and Location-Based Adjustments'. However, the cost estimate does not appear to have considered these factors, which could lead to an underestimate of the true costs under specific contract condition amendments."
+          }
+        ]
+      },
+      "cost": "$5,000",
+      "task": "Engineering team offsite in remote Alaska in January"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$2,400",
+      "task": "Business development trip to new markets in Africa"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$3,800",
+      "task": "Product testing in the Sahara Desert during summer"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$4,000",
+      "task": "Quarterly executive strategy meeting in Hawaii"
+    },
+    {
+      "analysis": {
+        "details": "Failed to decode JSON after cleanup.: line 1 column 1 (char 0)",
+        "error": "Invalid JSON format in response"
+      },
+      "cost": "$6,000",
+      "task": "Humanitarian aid project in a high-risk area"
+    },
+    {
+      "analysis": {
+        "cost_estimate": "$2800",
+        "task_description": "Internal training session in New York City over a holiday weekend",
+        "violations": [
+          {
+            "condition": "BudgetCaps.TotalExpensesPerTrip",
+            "violation": "The cost estimate of $2800 exceeds the defined limit of $2500 per trip in the contract. However, it needs to be considered that multi-factor adjustments for travel expenses allow for an increase in travel expenses under certain conditions."
+          },
+          {
+            "condition": "AmendmentToTheServiceAgreementRegardingTravelExpenses.MultiFactorAdjustmentConditions",
+            "violation": "Given the task description, two factors seem to apply ('Night and Weekend Travel' and 'Seasonal and Location-Based Adjustments') which with their respective multipliers of 1.1 and 1.2 could increase the allowable expense. Yet, even with the adjustment, the cost of $2800 is still higher than the adjusted allowable expense, hence still making it a violation."
+          }
+        ]
+      },
+      "cost": "$2,800",
+      "task": "Internal training session in New York City over a holiday weekend"
+    }
+  ]
+}

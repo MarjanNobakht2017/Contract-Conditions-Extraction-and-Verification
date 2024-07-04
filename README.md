@@ -7,7 +7,7 @@ This project provides a system for extracting key terms and conditions from a co
 ## Features
 
 - **Contract Conditions Extraction:** Automatically extracts and structures key terms from a provided contract text into a JSON format available in [extracted_conditions_new.json](https://github.com/MarjanNobakht2017/Contract-Conditions-Extraction-and-Verification/blob/main/extracted_conditions_new.json).
-- **Task Compliance Analysis:** Analyzes task descriptions from a CSV file for compliance with the extracted contract conditions, specifying reasons for any violations.
+- **Task Compliance Analysis:** Analyzes task descriptions from a CSV file for compliance with the extracted contract conditions, specifying reasons for any violations.This is available in [task_compliance_analysis.json](https://github.com/MarjanNobakht2017/Contract-Conditions-Extraction-and-Verification/blob/main/task_compliance_analysis.json).
 - **User Interface:** Provides an interface for uploading documents, performing analysis, and displaying results.
 - **Documentation:** Comprehensive documentation on the system's operation and each component.
 
