@@ -1,35 +1,12 @@
 from flask import Flask, request, jsonify, render_template
 import os
-import pandas as pd
-from docx import Document
 from dotenv import load_dotenv
-import time
+from tasks import extract_conditions, analyze_task_description_with_openai, read_docx, read_txt
 
 # Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
-
-def read_docx(file):
-    doc = Document(file)
-    full_text = []
-    for para in doc.paragraphs:
-        full_text.append(para.text)
-    return '\n'.join(full_text)
-
-def read_txt(file):
-    try:
-        return file.read().decode('utf-8')
-    except UnicodeDecodeError:
-        try:
-            return file.read().decode('latin-1')
-        except Exception as e:
-            raise ValueError(f"Error decoding file: {e}")
-
-def extract_conditions(contract_text):
-    # Simulate long-running task
-    time.sleep(10)  # Simulate a delay
-    return {"conditions": "Extracted conditions from the contract."}
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
@@ -49,7 +26,23 @@ def upload_files():
                 return jsonify({'error': 'Unsupported file type'}), 400
 
             conditions = extract_conditions(contract_text)
-            return jsonify({'conditions': conditions}), 200
+
+            # Read tasks and analyze each task with conditions
+            tasks_df = pd.read_excel(tasks_file)
+            tasks_df = tasks_df.rename(columns=lambda x: x.strip().lower().replace(' ', '_'))
+            analysis_results = []
+
+            for _, row in tasks_df.iterrows():
+                task_description = row['task_description']
+                task_cost = row['amount']
+                analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
+                analysis_results.append({
+                    'task_description': task_description,
+                    'task_cost': task_cost,
+                    'analysis': analysis
+                })
+
+            return jsonify({'conditions': conditions, 'analysis_results': analysis_results}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:

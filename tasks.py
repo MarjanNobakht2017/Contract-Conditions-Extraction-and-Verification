@@ -1,11 +1,9 @@
-from celery import Celery
-import pandas as pd
 import openai
-from docx import Document
 import json
 import os
-from dotenv import load_dotenv
 import re
+from docx import Document
+from dotenv import load_dotenv
 
 # Load configuration from .env file
 load_dotenv()
@@ -52,7 +50,6 @@ def validate_and_clean_json(response_content):
         except json.JSONDecodeError as e:
             return None
 
-@celery.task
 def analyze_task_description_with_openai(task_description, task_cost, conditions):
     prompt = f"""
     Given the following contract conditions:
@@ -78,11 +75,34 @@ def analyze_task_description_with_openai(task_description, task_cost, conditions
     except Exception as e:
         return {"error": "API call failed", "details": str(e)}
 
-@celery.task
 def extract_conditions(contract_text):
     prompt = f"""
-    Extract and structure in JSON format all key terms and conditions from the following contract. The JSON should clearly separate different sections and subsections of the contract.
-    Contract Text: {contract_text}
+    Extract and structure in JSON format all key terms and conditions from the following contract. The JSON should clearly separate different sections and subsections of the contract. Pay special attention to the 'Amendment to the Service Agreement Regarding Travel Expenses', providing a detailed breakdown of each adjustment factor, its multiplier, and specific examples of their application. Format the output to facilitate automated analysis and ensure terms are related to their appropriate sections.
+
+    Contract Text:
+    {contract_text}
+
+    Example of expected JSON format:
+    {{
+        "section1": {{
+            "title": "Section Title",
+            "terms": [
+                {{
+                    "term": "Term description",
+                    "details": "Term details"
+                }}
+            ]
+        }},
+        "amendment_to_the_service_agreement_regarding_travel_expenses": {{
+            "adjustment_factors": [
+                {{
+                    "factor": "Factor description",
+                    "multiplier": "Multiplier value",
+                    "example": "Example of application"
+                }}
+            ]
+        }}
+    }}
     """
     try:
         response = openai.ChatCompletion.create(
@@ -101,11 +121,3 @@ def extract_conditions(contract_text):
         return {"error": "Failed to decode JSON. Check the formatting of the output."}
     except Exception as e:
         return {"error": str(e)}
-
-def save_conditions_to_file(conditions, filename='extracted_conditions.json'):
-    with open(filename, 'w', encoding='utf-8') as json_file:
-        json.dump(conditions, json_file, indent=4)
-
-def load_conditions_from_file(filename='extracted_conditions.json'):
-    with open(filename, 'r', encoding='utf-8') as json_file:
-        return json.load(json_file)
