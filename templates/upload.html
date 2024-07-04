@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Contract and Tasks</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-5">Upload Contract and Tasks</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="contractFile">Upload Contract:</label>
+                <input type="file" class="form-control-file" id="contractFile" name="contract">
+            </div>
+            <div class="form-group">
+                <label for="tasksFile">Upload Task Descriptions:</label>
+                <input type="file" class="form-control-file" id="tasksFile" name="tasks">
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze Tasks</button>
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
