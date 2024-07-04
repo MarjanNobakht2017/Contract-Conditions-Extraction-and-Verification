@@ -1,27 +1,21 @@
 from flask import Flask, request, jsonify, render_template
-import pandas as pd
-from docx import Document
-from dotenv import load_dotenv
 import os
 from celery import Celery
-from tasks import *
+from dotenv import load_dotenv
+from tasks import extract_conditions, read_docx, read_txt
 
-
-# Load configuration from .env file
+# Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
 
-# Celery configuration
+# Configure Celery
 app.config['CELERY_BROKER_URL'] = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 app.config['CELERY_RESULT_BACKEND'] = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-
-# Initialize Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 @app.route('/', methods=['GET', 'POST'])
-
 def upload_files():
     if request.method == 'POST':
         contract_file = request.files.get('contract')

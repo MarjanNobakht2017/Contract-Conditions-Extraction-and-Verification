@@ -1,4 +1,4 @@
-from celery import current_app as celery
+from celery import Celery
 import pandas as pd
 import openai
 from docx import Document
