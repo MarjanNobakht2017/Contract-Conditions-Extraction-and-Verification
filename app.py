@@ -1,85 +1,93 @@
-from flask import Flask, request, jsonify, render_template
-from celery_config import celery_app
-import os
-import pandas as pd
-from docx import Document
 from extract_conditions import *
 from analyze_tasks import *
-import io
+from flask import Flask, request, jsonify
+import openai
+import json
+import pandas as pd
+from docx import Document
+from dotenv import load_dotenv
+import os
+
 
 app = Flask(__name__)
-
-@celery_app.task(bind=True)
-def process_files(self, contract_file_data, tasks_file_data):
-    try:
-        contract_file = io.BytesIO(contract_file_data['content'])
-        tasks_file = io.BytesIO(tasks_file_data['content'])
-        
-        if contract_file_data['filename'].endswith('.docx'):
-            contract_text = read_docx(contract_file)
-        elif contract_file_data['filename'].endswith('.txt'):
-            contract_text = read_txt(contract_file)
-        else:
-            return {'error': 'Unsupported file type'}
-
-        conditions = extract_conditions(contract_text)
-
-        if conditions:
-            save_conditions_to_file(conditions)
-
-            tasks_df = pd.read_excel(tasks_file)
-            tasks_df = clean_column_names(tasks_df)
-
-            loaded_conditions = load_conditions_from_file()
-
-            violations = analyze_all_task_descriptions(tasks_df, loaded_conditions)
-            return {'conditions': loaded_conditions, 'violations': violations}
-        else:
-            return {'error': 'Error extracting conditions'}
-
-    except Exception as e:
-        return {'error': str(e)}
-
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
     if request.method == 'POST':
         contract_file = request.files['contract']
         tasks_file = request.files['tasks']
 
-        contract_file_data = {
-            'filename': contract_file.filename.lower(),
-            'content': contract_file.read()
-        }
+        filename = contract_file.filename.lower()
 
-        tasks_file_data = {
-            'filename': tasks_file.filename.lower(),
-            'content': tasks_file.read()
-        }
+        try:
+            if filename.endswith('.docx'):
+                contract_text = read_docx(contract_file)
+            elif filename.endswith('.txt'):
+                contract_text = read_txt(contract_file)
+            else:
+                return 'Unsupported file type', 400
+        except Exception as e:
+            return f'Error reading file: {e}', 400
 
-        task = process_files.delay(contract_file_data, tasks_file_data)
-        return jsonify({"task_id": task.id}), 202
+        conditions = extract_conditions(contract_text)
 
-    return render_template('upload.html')
+        if conditions:
+            # save conditions to a JSON file
+            save_conditions_to_file(conditions)
 
-@app.route('/task_status/<task_id>', methods=['GET'])
-def task_status(task_id):
-    task = process_files.AsyncResult(task_id)
-    if task.state == 'PENDING':
-        response = {
-            'state': task.state,
-            'status': 'Pending...'
+            # read the tasks file
+            try:
+                tasks_df = pd.read_excel(tasks_file)
+                tasks_df = clean_column_names(tasks_df)
+                print("Cleaned columns in tasks file:", tasks_df.columns)
+
+                # load the conditions from the file
+                loaded_conditions = load_conditions_from_file()
+
+                violations = analyze_all_task_descriptions(tasks_df, loaded_conditions)
+                return jsonify({'conditions': loaded_conditions, 'violations': violations})
+            except Exception as e:
+                return f'Error reading tasks file: {e}', 400
+        else:
+            return 'Error extracting conditions', 400
+    return '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Contract and Tasks</title>
+    <!-- Link to Bootstrap CSS for styling -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            margin-top: 50px;
         }
-    elif task.state != 'FAILURE':
-        response = {
-            'state': task.state,
-            'result': task.result
-        }
-    else:
-        response = {
-            'state': task.state,
-            'status': str(task.info),
-        }
-    return jsonify(response)
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-5">Upload Contract and Tasks</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="contractFile">Upload Contract:</label>
+                <input type="file" class="form-control-file" id="contractFile" name="contract">
+            </div>
+            <div class="form-group">
+                <label for="tasksFile">Upload Task Descriptions:</label>
+                <input type="file" class="form-control-file" id="tasksFile" name="tasks">
+            </div>
+            <button type="submit" class="btn btn-primary">Analyze Tasks</button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+    '''
+
 
 if __name__ == '__main__':
     app.run(debug=True)
