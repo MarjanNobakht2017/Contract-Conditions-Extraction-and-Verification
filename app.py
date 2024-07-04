@@ -1,12 +1,74 @@
 from flask import Flask, request, jsonify, render_template
 import os
+import pandas as pd
+from docx import Document
 from dotenv import load_dotenv
-from tasks import extract_conditions, analyze_task_description_with_openai, read_docx, read_txt
+import uuid
+import threading
+import time
 
 # Load .env configuration
 load_dotenv()
 
 app = Flask(__name__)
+
+# In-memory store for task statuses
+tasks = {}
+
+def read_docx(file):
+    doc = Document(file)
+    full_text = []
+    for para in doc.paragraphs:
+        full_text.append(para.text)
+    return '\n'.join(full_text)
+
+def read_txt(file):
+    try:
+        return file.read().decode('utf-8')
+    except UnicodeDecodeError:
+        try:
+            return file.read().decode('latin-1')
+        except Exception as e:
+            raise ValueError(f"Error decoding file: {e}")
+
+def extract_conditions(contract_text):
+    # Simulate long-running task
+    time.sleep(10)  # Simulate a delay
+
+    # Simulated OpenAI API call
+    conditions = {
+        "extracted_conditions": "This is a simulated response from OpenAI."
+    }
+    return conditions
+
+def analyze_task_description_with_openai(task_description, task_cost, conditions):
+    # Simulate long-running task
+    time.sleep(10)  # Simulate a delay
+
+    # Simulated OpenAI API call
+    analysis = {
+        "analysis": "This is a simulated analysis result from OpenAI."
+    }
+    return analysis
+
+def process_task(task_id, contract_text, tasks_df):
+    try:
+        conditions = extract_conditions(contract_text)
+
+        analysis_results = []
+        for _, row in tasks_df.iterrows():
+            task_description = row['task_description']
+            task_cost = row['amount']
+            analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
+            analysis_results.append({
+                'task_description': task_description,
+                'task_cost': task_cost,
+                'analysis': analysis
+            })
+
+        tasks[task_id] = {'status': 'completed', 'conditions': conditions, 'analysis_results': analysis_results}
+    except Exception as e:
+        tasks[task_id] = {'status': 'failed', 'error': str(e)}
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_files():
@@ -25,28 +87,27 @@ def upload_files():
             else:
                 return jsonify({'error': 'Unsupported file type'}), 400
 
-            conditions = extract_conditions(contract_text)
-
-            # Read tasks and analyze each task with conditions
             tasks_df = pd.read_excel(tasks_file)
             tasks_df = tasks_df.rename(columns=lambda x: x.strip().lower().replace(' ', '_'))
-            analysis_results = []
 
-            for _, row in tasks_df.iterrows():
-                task_description = row['task_description']
-                task_cost = row['amount']
-                analysis = analyze_task_description_with_openai(task_description, task_cost, conditions)
-                analysis_results.append({
-                    'task_description': task_description,
-                    'task_cost': task_cost,
-                    'analysis': analysis
-                })
+            task_id = str(uuid.uuid4())
+            tasks[task_id] = {'status': 'processing'}
 
-            return jsonify({'conditions': conditions, 'analysis_results': analysis_results}), 200
+            thread = threading.Thread(target=process_task, args=(task_id, contract_text, tasks_df))
+            thread.start()
+
+            return jsonify({'task_id': task_id}), 202
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:
         return render_template('index.html')
+
+@app.route('/status/<task_id>')
+def task_status(task_id):
+    task = tasks.get(task_id)
+    if not task:
+        return jsonify({'error': 'Invalid task ID'}), 404
+    return jsonify(task)
 
 if __name__ == '__main__':
     app.run(debug=True)
